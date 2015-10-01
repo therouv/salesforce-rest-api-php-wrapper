@@ -104,44 +104,29 @@ class SalesforceAPI extends APIAbstract
             'username' => $username,
             'password' => $password.$security_token,
         ];
-        // Change the content type to a form
-//        $headers = [
-//            'Content-Type' => 'application/x-www-form-urlencoded'
-//        ];
-
-        // TODO: Fix this to use the httpRequest function. There is an issue with the curl opt Custom Request
 
         $ch = curl_init();
 
-        $http_params = http_build_query($login_data);
-
         curl_setopt($ch, CURLOPT_URL, $this->base_url.'/services/oauth2/token');
-        curl_setopt($ch, CURLOPT_POST, 5);
-        curl_setopt($ch, CURLOPT_HEADER, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $http_params);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type : application/x-www-form-urlencoded'));
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $login_data);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_SSLVERSION, 4);
 
-        $login = curl_exec($ch);
-        $login = explode("\n", $login);
-        $login = json_decode($login[count($login) - 1]);
-        //echo 'Auth response: '; print_r($data); echo '<br/>';
+        $ret = curl_exec($ch);
+        $err = curl_error($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        $this->checkForRequestErrors($ret, $ch);
         curl_close($ch);
-        // Send the request
-//        $login = $this->httpRequest($this->base_url . self::LOGIN_PATH,$login_data, $headers, self::METH_POST);
 
-        // Set the access token
-//        if($this->return_type === self::RETURN_OBJECT) {
-        $this->access_token = $login->access_token;
-//        } elseif($this->return_type === self::RETURN_ARRAY_A) {
-//            $this->access_token = $login['access_token'];
-//        }
+        $ret = json_decode($ret);
+        $this->access_token = $ret->access_token;
+        $this->base_url = $ret->instance_url;
+        $this->instance_url = $ret->instance_url.'/services/data/v'.$this->api_version.'/';
 
-
-        // Return the login object
-        // TODO: Should this be returned?
-        return $login;
+        return $ret;
     }
 
     /*=========== Organization Information ===============*/
