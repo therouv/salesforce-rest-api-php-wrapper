@@ -8,7 +8,7 @@
  * @author Anthony Humes <jah.humes@gmail.com>
  * @license GPL, or GNU General Public License, version 2
  */
-class SalesforceAPI extends APIAbstract
+class SalesforceAPI
 {
     public $last_response;
     protected $client_id,
@@ -417,13 +417,13 @@ class SalesforceAPI extends APIAbstract
 
         $response = $this->checkForRequestErrors($response, $this->handle);
 
-        $result = json_decode($response);
-
         if ($this->return_type === self::RETURN_OBJECT) {
-            return $result;
+            $result = json_decode($response);
         } elseif ($this->return_type === self::RETURN_ARRAY_A) {
-            return $this->objectToArray($result);
+            $result = json_decode($response, true);
         }
+
+        return $result;
     }
 
     /**
@@ -493,31 +493,6 @@ class SalesforceAPI extends APIAbstract
         $this->last_response = $response;
 
         return $response;
-    }
-}
-
-abstract class APIAbstract
-{
-    /**
-     * Converts objects returned into arrays.
-     * This is necessary when returning complex objects.
-     * For example, an object returned from a search using a cross-object reference cannot be displayed using methods to display simple objects...
-     *   /api/task/search?fields=project:name
-     *   /api/task/search?fields=DE:Parameter Name
-     * both contain colons, which will result in a stdClass error when using the methods to reference simple objects.
-     * The function below provides a way to convert the 'project:name' object into a usuable array
-     *   i.e. $task['project:name'] can be used by placing the returned object into the function.
-     */
-    public function objectToArray($object)
-    {
-        if (!is_object($object) && !is_array($object)) {
-            return $object;
-        }
-        if (is_object($object)) {
-            $object = get_object_vars($object);
-        }
-
-        return array_map(array($this, 'objectToArray'), $object);
     }
 }
 
