@@ -226,6 +226,22 @@ class SalesforceAPI
     }
 
     /**
+     * Update or Insert a record based on an external field and value.
+     *
+     *
+     * @param string $object_name Object/field_name/value to identify the record
+     * @param array  $data
+     *
+     * @return mixed
+     *
+     * @throws SalesforceAPIException
+     */
+    public function upsert($object_name, $data)
+    {
+        return $this->request(self::OBJECT_PATH.(string) $object_name, $data, self::METH_PATCH);
+    }
+
+    /**
      * Update an existing object.
      *
      * @param string $object_name
