@@ -73,6 +73,7 @@ class SalesforceAPI
                 CURLOPT_TIMEOUT => 240,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_BUFFERSIZE => 128000,
+                CURLINFO_HEADER_OUT => true,
 
             ];
             curl_setopt_array($this->handle, $options);
@@ -493,11 +494,15 @@ class SalesforceAPI
                 break;
             default:
                 if (empty($response) || $response !== '') {
-                    throw new SalesforceAPIException($response);
+                    $err = new SalesforceAPIException($response);
+                    $err->curl_info = $request_info;
+                    throw $err;
                 } else {
                     $result = json_decode($response);
                     if (isset($result->error)) {
-                        throw new SalesforceAPIException($result->error_description);
+                        $err = new SalesforceAPIException($result->error_description);
+                        $err->curl_info = $request_info;
+                        throw $err;
                     }
                 }
                 break;
@@ -511,4 +516,5 @@ class SalesforceAPI
 
 class SalesforceAPIException extends Exception
 {
+    public $curl_info = null;
 }
