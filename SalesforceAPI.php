@@ -11,34 +11,33 @@
 class SalesforceAPI
 {
     public $last_response;
-    protected $client_id,
-        $client_secret,
-        $instance_url,
-        $base_url,
-        $headers,
-        $return_type,
-        $api_version;
-    private $access_token,
-        $handle;
+
+    protected $client_id;
+    protected $client_secret;
+    protected $instance_url;
+    protected $base_url;
+    protected $headers;
+    protected $return_type;
+    protected $api_version;
+
+    private $access_token;
+    private $handle;
 
     // Supported request methods
-    const
-        METH_DELETE = 'DELETE',
-        METH_GET = 'GET',
-        METH_POST = 'POST',
-        METH_PUT = 'PUT',
-        METH_PATCH = 'PATCH';
+    const METH_DELETE = 'DELETE';
+    const METH_GET = 'GET';
+    const METH_POST = 'POST';
+    const METH_PUT = 'PUT';
+    const METH_PATCH = 'PATCH';
 
     // Return types
-    const
-        RETURN_OBJECT = 'object',
-        RETURN_ARRAY_K = 'array_k',
-        RETURN_ARRAY_A = 'array_a';
+    const RETURN_OBJECT = 'object';
+    const RETURN_ARRAY_K = 'array_k';
+    const RETURN_ARRAY_A = 'array_a';
 
-    const
-        LOGIN_PATH = '/services/oauth2/token',
-        OBJECT_PATH = 'sobjects/',
-        GRANT_TYPE = 'password';
+    const LOGIN_PATH = '/services/oauth2/token';
+    const OBJECT_PATH = 'sobjects/';
+    const GRANT_TYPE = 'password';
 
     /**
      * Constructs the SalesforceConnection.
@@ -70,8 +69,6 @@ class SalesforceAPI
         if (is_null($this->handle)) {
             $this->handle = curl_init();
             $options = [
-//                CURLOPT_SSL_VERIFYPEER => false,
-//                CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_CONNECTTIMEOUT => 5,
                 CURLOPT_TIMEOUT => 240,
                 CURLOPT_RETURNTRANSFER => true,
