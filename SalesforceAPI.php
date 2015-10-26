@@ -51,35 +51,20 @@ class SalesforceAPI
     public function __construct($instance_url, $version, $client_id, $client_secret, $return_type = self::RETURN_OBJECT)
     {
         // Instantiate base variables
-        $this->instance_url = $instance_url;
-        $this->api_version = $version;
-        $this->client_id = $client_id;
+        $this->instance_url  = $instance_url;
+        $this->api_version   = $version;
+        $this->client_id     = $client_id;
         $this->client_secret = $client_secret;
-        $this->return_type = $return_type;
+        $this->return_type   = $return_type;
 
-        $this->base_url = $instance_url;
-        $this->instance_url = $instance_url.'/services/data/v'.$version.'/';
+        $this->base_url      = $instance_url;
+        $this->instance_url  = $instance_url.'/services/data/v'.$version.'/';
 
         $this->headers = [
             'Content-Type' => 'application/json',
         ];
-
-        // If the cURL handle doesn't exist, create it
-        if (is_null($this->handle)) {
-            $this->handle = curl_init();
-            $options = [
-                CURLOPT_CONNECTTIMEOUT => 5,
-                CURLOPT_TIMEOUT => 240,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_BUFFERSIZE => 128000,
-                CURLINFO_HEADER_OUT => true,
-
-            ];
-            curl_setopt_array($this->handle, $options);
-        }
     }
 
-    /*========== Authorization =========*/
     /**
      * Logs in the user to Salesforce with a username, password, and security token.
      *
@@ -175,7 +160,6 @@ class SalesforceAPI
         return $this->request(self::OBJECT_PATH);
     }
 
-    /*========== Object Metadata ============*/
     /**
      * Get metadata about an Object.
      *
@@ -206,7 +190,6 @@ class SalesforceAPI
         }
     }
 
-    /*========= Working with Records ==========*/
     /**
      * Create a new record.
      *
@@ -226,7 +209,7 @@ class SalesforceAPI
      * Update or Insert a record based on an external field and value.
      *
      *
-     * @param string $object_name Object/field_name/value to identify the record
+     * @param string $object_name object_name/field_name/field_value to identify the record
      * @param array  $data
      *
      * @return mixed
@@ -386,6 +369,16 @@ class SalesforceAPI
      */
     protected function httpRequest($url, $params = null, $headers = null, $method = self::METH_GET)
     {
+        $this->handle = curl_init();
+        $options = [
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_BUFFERSIZE     => 128000,
+            CURLINFO_HEADER_OUT    => true,
+        ];
+        curl_setopt_array($this->handle, $options);
+
         // Set the headers
         if (isset($headers) && $headers !== null && !empty($headers)) {
             $request_headers = array_merge($this->headers, $headers);
@@ -407,13 +400,10 @@ class SalesforceAPI
         // Modify the request depending on the type of request
         switch ($method) {
             case 'POST':
-//                curl_setopt($this->handle, CURLOPT_CUSTOMREQUEST, null);
                 curl_setopt($this->handle, CURLOPT_POST, true);
                 break;
             case 'GET':
-//                curl_setopt($this->handle, CURLOPT_CUSTOMREQUEST, null);
-                curl_setopt($this->handle, CURLOPT_POSTFIELDS, []);
-                curl_setopt($this->handle, CURLOPT_POST, false);
+                curl_setopt($this->handle, CURLOPT_HTTPGET, true);
                 if (isset($params) && $params !== null && !empty($params)) {
                     $url .= '?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986);
                 }
@@ -435,6 +425,8 @@ class SalesforceAPI
         } elseif ($this->return_type === self::RETURN_ARRAY_A) {
             $result = json_decode($response, true);
         }
+
+        curl_close($this->handle);
 
         return $result;
     }
