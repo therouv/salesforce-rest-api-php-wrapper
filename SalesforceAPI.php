@@ -104,14 +104,26 @@ class SalesforceAPI
         curl_close($ch);
 
         $ret = json_decode($ret);
-        $this->access_token = $ret->access_token;
-        $this->base_url = $ret->instance_url;
-        $this->instance_url = $ret->instance_url.'/services/data/v'.$this->api_version.'/';
+        $this->afterLoginSetup($ret);
 
         return $ret;
     }
 
-    /*=========== Organization Information ===============*/
+    /**
+     * afterLoginSetup
+     *
+     * @param object $login_resp json_decoded /services/oauth2/token response
+     * @return bool
+     */
+    public function afterLoginSetup($login_resp)
+    {
+        $this->access_token = $login_resp->access_token;
+        $this->base_url = $login_resp->instance_url;
+        $this->instance_url = $login_resp->instance_url.'/services/data/v'.$this->api_version.'/';
+
+        return true;
+    }
+
     /**
      * Get a list of all the API Versions for the instance.
      *
