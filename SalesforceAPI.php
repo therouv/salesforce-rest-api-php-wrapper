@@ -32,7 +32,6 @@ class SalesforceAPI
 
     // Return types
     const RETURN_OBJECT = 'object';
-    const RETURN_ARRAY_K = 'array_k';
     const RETURN_ARRAY_A = 'array_a';
 
     const LOGIN_PATH = '/services/oauth2/token';
