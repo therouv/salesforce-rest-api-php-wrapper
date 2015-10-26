@@ -48,7 +48,7 @@ class SalesforceAPI
      * @param string     $client_id     The Consumer Key from Salesforce
      * @param string     $client_secret The Consumer Secret from Salesforce
      */
-    public function __construct($instance_url, $version, $client_id, $client_secret, $return_type = self::RETURN_OBJECT)
+    public function __construct($instance_url, $version, $client_id, $client_secret, $return_type = self::RETURN_ARRAY_A)
     {
         // Instantiate base variables
         $this->instance_url  = $instance_url;
