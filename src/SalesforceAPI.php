@@ -543,14 +543,12 @@ class SalesforceAPI
                 break;
             default:
                 if (empty($response) || $response !== '') {
-                    $err = new SalesforceAPIException($response);
-                    $err->curl_info = $request_info;
+                    $err = new SalesforceAPIException($response, $request_info);
                     throw $err;
                 } else {
                     $result = json_decode($response);
                     if (isset($result->error)) {
-                        $err = new SalesforceAPIException($result->error_description);
-                        $err->curl_info = $request_info;
+                        $err = new SalesforceAPIException($result->error_description, $request_info);
                         throw $err;
                     }
                 }

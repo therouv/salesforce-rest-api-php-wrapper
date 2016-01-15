@@ -7,7 +7,7 @@ This is a PHP Wrapper for the Salesforce Rest API.
 
 Grant Type
 ----------
-This library currently only supported the [Username-Password authentication flow](http://www.salesforce.com/us/developer/docs/api_rest/). 
+This library currently only supports the [Username-Password authentication flow](http://www.salesforce.com/us/developer/docs/api_rest/) or password grant type. 
 
 Consumer Key / Secret
 ---------------------
@@ -24,7 +24,7 @@ navigate to Deploy -> Sandboxes. Here you can choose a type of sandbox to deploy
 API Versions
 ------------
 To see available API versions, you can navigate to `https://<your-instance-subdomain>.salesforce.com/services/data`.
-Generally you should be fine to use the most recent version. I use version 35.0.
+Generally you should be fine to use the most recent version. If you are not sure, please check the [SOQL documentation](https://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_soql.htm)
 
 Security Token
 --------------
