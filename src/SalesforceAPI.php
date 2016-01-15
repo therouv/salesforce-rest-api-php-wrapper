@@ -1,4 +1,4 @@
-<?php namespace SalesforceAPI;
+<?php namespace SalesforceRestAPI;
 
 use DateTime;
 
