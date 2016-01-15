@@ -1,4 +1,6 @@
-<?php
+<?php namespace SalesforceAPI;
+
+use DateTime;
 
 /**
  * The Salesforce REST API PHP Wrapper.
@@ -10,20 +12,58 @@
  */
 class SalesforceAPI
 {
+    /**
+     * @var
+     */
     public $last_response;
 
+    /**
+     * @var string
+     */
     protected $client_id;
+
+    /**
+     * @var string
+     */
     protected $client_secret;
+
+    /**
+     * @var string
+     */
     protected $instance_url;
+
+    /**
+     * @var string
+     */
     protected $base_url;
+
+    /**
+     * @var array
+     */
     protected $headers;
+
+    /**
+     * @var string
+     */
     protected $return_type;
+
+    /**
+     * @var int|string
+     */
     protected $api_version;
 
+    /**
+     * @var string
+     */
     private $access_token;
+
+    /**
+     * @var
+     */
     private $handle;
 
     // Supported request methods
+
     const METH_DELETE = 'DELETE';
     const METH_GET = 'GET';
     const METH_POST = 'POST';
@@ -515,9 +555,4 @@ class SalesforceAPI
 
         return $response;
     }
-}
-
-class SalesforceAPIException extends Exception
-{
-    public $curl_info = null;
 }
