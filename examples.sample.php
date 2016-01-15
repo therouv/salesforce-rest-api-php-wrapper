@@ -1,6 +1,6 @@
 <?php
 
-require_once 'SalesforceAPI.php';
+use SalesforceRestAPI;
 
 $salesforce = new SalesforceAPI('https://na17.salesforce.com','32.0','<Consumer Key>', '<Consumer Secret>');
 

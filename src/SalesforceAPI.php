@@ -13,7 +13,7 @@ use DateTime;
 class SalesforceAPI
 {
     /**
-     * @var
+     * @var mixed
      */
     public $last_response;
 
@@ -58,7 +58,7 @@ class SalesforceAPI
     private $access_token;
 
     /**
-     * @var
+     * @var resource
      */
     private $handle;
 
@@ -83,22 +83,22 @@ class SalesforceAPI
      *
      * This sets up the connection to salesforce and instantiates all default variables
      *
-     * @param string     $instance_url  The url to connect to
+     * @param string     $instanceUrl  The url to connect to
      * @param string|int $version       The version of the API to connect to
-     * @param string     $client_id     The Consumer Key from Salesforce
-     * @param string     $client_secret The Consumer Secret from Salesforce
+     * @param string     $clientId     The Consumer Key from Salesforce
+     * @param string     $clientSecret The Consumer Secret from Salesforce
      */
-    public function __construct($instance_url, $version, $client_id, $client_secret, $return_type = self::RETURN_ARRAY_A)
+    public function __construct($instanceUrl, $version, $clientId, $clientSecret, $returnType = self::RETURN_ARRAY_A)
     {
         // Instantiate base variables
-        $this->instance_url  = $instance_url;
+        $this->instance_url  = $instanceUrl;
         $this->api_version   = $version;
-        $this->client_id     = $client_id;
-        $this->client_secret = $client_secret;
-        $this->return_type   = $return_type;
+        $this->client_id     = $clientId;
+        $this->client_secret = $clientSecret;
+        $this->return_type   = $returnType;
 
-        $this->base_url      = $instance_url;
-        $this->instance_url  = $instance_url.'/services/data/v'.$version.'/';
+        $this->base_url      = $instanceUrl;
+        $this->instance_url  = $instanceUrl.'/services/data/v'.$version.'/';
 
         $this->headers = [
             'Content-Type' => 'application/json',
@@ -110,13 +110,13 @@ class SalesforceAPI
      *
      * @param string $username
      * @param string $password
-     * @param string $security_token
+     * @param string $securityToken
      *
      * @return mixed
      *
      * @throws SalesforceAPIException
      */
-    public function login($username, $password, $security_token)
+    public function login($username, $password, $securityToken)
     {
         // Set the login data
         $login_data = [
@@ -124,7 +124,7 @@ class SalesforceAPI
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
             'username' => $username,
-            'password' => $password.$security_token,
+            'password' => $password.$securityToken,
         ];
 
         $ch = curl_init();
@@ -152,14 +152,14 @@ class SalesforceAPI
     /**
      * afterLoginSetup
      *
-     * @param object $login_resp json_decoded /services/oauth2/token response
+     * @param object $loginResponse json_decoded /services/oauth2/token response
      * @return bool
      */
-    public function afterLoginSetup($login_resp)
+    public function afterLoginSetup($loginResponse)
     {
-        $this->access_token = $login_resp->access_token;
-        $this->base_url = $login_resp->instance_url;
-        $this->instance_url = $login_resp->instance_url.'/services/data/v'.$this->api_version.'/';
+        $this->access_token = $loginResponse->access_token;
+        $this->base_url     = $loginResponse->instance_url;
+        $this->instance_url = $loginResponse->instance_url.'/services/data/v'.$this->api_version.'/';
 
         return true;
     }
@@ -215,7 +215,7 @@ class SalesforceAPI
     /**
      * Get metadata about an Object.
      *
-     * @param string   $object_name
+     * @param string   $objectName
      * @param bool     $all         Should this return all meta data including information about each field, URLs, and child relationships
      * @param DateTime $since       Only return metadata if it has been modified since the date provided
      *
@@ -223,7 +223,7 @@ class SalesforceAPI
      *
      * @throws SalesforceAPIException
      */
-    public function getObjectMetadata($object_name, $all = false, DateTime $since = null)
+    public function getObjectMetadata($objectName, $all = false, DateTime $since = null)
     {
         $headers = [];
         // Check if the If-Modified-Since header should be set
@@ -236,86 +236,86 @@ class SalesforceAPI
 
         // Should this return all meta data including information about each field, URLs, and child relationships
         if ($all === true) {
-            return $this->request(self::OBJECT_PATH.$object_name.'/describe/', [], self::METH_GET, $headers);
+            return $this->request(self::OBJECT_PATH.$objectName.'/describe/', [], self::METH_GET, $headers);
         } else {
-            return $this->request(self::OBJECT_PATH.$object_name, [], self::METH_GET, $headers);
+            return $this->request(self::OBJECT_PATH.$objectName, [], self::METH_GET, $headers);
         }
     }
 
     /**
      * Create a new record.
      *
-     * @param string $object_name
+     * @param string $objectName
      * @param array  $data
      *
      * @return mixed
      *
      * @throws SalesforceAPIException
      */
-    public function create($object_name, $data)
+    public function create($objectName, $data)
     {
-        return $this->request(self::OBJECT_PATH.(string) $object_name, $data, self::METH_POST);
+        return $this->request(self::OBJECT_PATH.(string) $objectName, $data, self::METH_POST);
     }
 
     /**
      * Update or Insert a record based on an external field and value.
      *
      *
-     * @param string $object_name object_name/field_name/field_value to identify the record
+     * @param string $objectName object_name/field_name/field_value to identify the record
      * @param array  $data
      *
      * @return mixed
      *
      * @throws SalesforceAPIException
      */
-    public function upsert($object_name, $data)
+    public function upsert($objectName, $data)
     {
-        return $this->request(self::OBJECT_PATH.(string) $object_name, $data, self::METH_PATCH);
+        return $this->request(self::OBJECT_PATH.(string) $objectName, $data, self::METH_PATCH);
     }
 
     /**
      * Update an existing object.
      *
-     * @param string $object_name
-     * @param string $object_id
+     * @param string $objectName
+     * @param string $objectId
      * @param array  $data
      *
      * @return mixed
      *
      * @throws SalesforceAPIException
      */
-    public function update($object_name, $object_id, $data)
+    public function update($objectName, $objectId, $data)
     {
-        return $this->request(self::OBJECT_PATH.(string) $object_name.'/'.$object_id, $data, self::METH_PATCH);
+        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, $data, self::METH_PATCH);
     }
 
     /**
      * Delete a record.
      *
-     * @param string $object_name
-     * @param string $object_id
+     * @param string $objectName
+     * @param string $objectId
      *
      * @return mixed
      *
      * @throws SalesforceAPIException
      */
-    public function delete($object_name, $object_id)
+    public function delete($objectName, $objectId)
     {
-        return $this->request(self::OBJECT_PATH.(string) $object_name.'/'.$object_id, null, self::METH_DELETE);
+        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, null, self::METH_DELETE);
     }
 
     /**
      * Get a record.
      *
-     * @param string     $object_name
-     * @param string     $object_id
+     * @param string     $objectName
+     * @param string     $objectId
      * @param array|null $fields
      *
      * @return mixed
      *
      * @throws SalesforceAPIException
      */
-    public function get($object_name, $object_id, $fields = null)
+    public function get($objectName, $objectId, $fields = null)
     {
         $params = [];
         // If fields are included, append them to the parameters
@@ -323,7 +323,7 @@ class SalesforceAPI
             $params['fields'] = implode(',', $fields);
         }
 
-        return $this->request(self::OBJECT_PATH.(string) $object_name.'/'.$object_id, $params);
+        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, $params);
     }
 
     /**
@@ -359,10 +359,16 @@ class SalesforceAPI
         return $this->request($path, $search_data, self::METH_GET);
     }
 
+    /**
+     * @param string $query
+     * @return mixed
+     * @throws SalesforceAPIException
+     */
     public function getQueryFromUrl($query)
     {
         // Throw an error if no access token
-        if (!isset($this->access_token)) {
+        if (!isset($this->access_token))
+        {
             throw new SalesforceAPIException('You have not logged in yet.');
         }
 
