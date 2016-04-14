@@ -134,7 +134,7 @@ class SalesforceAPI
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $login_data);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_SSLVERSION, 4);
+        // curl_setopt($ch, CURLOPT_SSLVERSION, 4);
 
         $ret = curl_exec($ch);
         $err = curl_error($ch);
