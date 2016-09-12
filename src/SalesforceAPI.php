@@ -435,11 +435,17 @@ class SalesforceAPI
      *
      * @param Job    $job
      * @param string $batchId
+     * @return array
      */
     public function getJobBatches($job)
     {
       $data = $this->httpBatchRequest("/{$job->id}/batch", [], self::METHOD_GET);
-      echo var_dump($data);
+      $result = [];
+      foreach ($data['batchInfo'] as $batch)
+      {
+        $result[] = new BatchInfo($batch, $job);
+      }
+      return $result;
     }
 
     /**
@@ -471,11 +477,11 @@ class SalesforceAPI
      *
      * @param Job    $job
      * @param string $batchId
+     * @return array
      */
     public function getBatchResults($job, $batchId)
     {
-      $data = $this->httpBatchRequest("/{$job->id}/batch/{$batchId}/result", [], self::METHOD_GET);
-      echo var_dump($data);
+      return $this->httpBatchRequest("/{$job->id}/batch/{$batchId}/result", [], self::METHOD_GET);
     }
 
     /**
