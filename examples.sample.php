@@ -25,3 +25,20 @@ $project_with_fields = $salesforce->get( 'Account', $create_account->id, ['Name'
 $delete_project = $salesforce->delete( 'Account', $create_account->id );
 
 $response = $salesforce->searchSOQL('SELECT name from Position__c',true);
+
+// batch api support
+$job = $salesforce->createJob(Job::OPERATION_INSERT, 'Lead', Job::TYPE_JSON);
+$users = [
+  [
+    'FirstName'         => 'jon',
+    'LastName'          => 'doe',
+    'Phone'             => '801-555-2423',
+    'Email'             => 'jon@doe.com',
+  ]
+];
+$batchInfo = $salesforce->addBatch($job, $users);
+$salesforce->closeJob($job);
+
+sleep(10); // wait for salesforce to process the batch
+$updatedBbatchInfo = $salesforce->getBatchInfo($job, $batchInfo->id);
+$batchResult = $salesforce->getBatchResults($job, $batchInfo->id);
