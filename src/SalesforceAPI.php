@@ -32,6 +32,8 @@ class SalesforceAPI
      */
     protected $instance_url;
 
+    protected $batch_url;
+
     /**
      * @var string
      */
@@ -64,19 +66,19 @@ class SalesforceAPI
 
     // Supported request methods
 
-    const METH_DELETE = 'DELETE';
-    const METH_GET = 'GET';
-    const METH_POST = 'POST';
-    const METH_PUT = 'PUT';
-    const METH_PATCH = 'PATCH';
+    const METHOD_DELETE = 'DELETE';
+    const METHOD_GET    = 'GET';
+    const METHOD_POST   = 'POST';
+    const METHOD_PUT    = 'PUT';
+    const METHOD_PATCH  = 'PATCH';
 
     // Return types
-    const RETURN_OBJECT = 'object';
-    const RETURN_ARRAY_A = 'array_a';
+    const RETURN_OBJECT   = 'object';
+    const RETURN_ARRAY_A  = 'array_a';
 
-    const LOGIN_PATH = '/services/oauth2/token';
+    const LOGIN_PATH  = '/services/oauth2/token';
     const OBJECT_PATH = 'sobjects/';
-    const GRANT_TYPE = 'password';
+    const GRANT_TYPE  = 'password';
 
     /**
      * Constructs the SalesforceConnection.
@@ -99,6 +101,7 @@ class SalesforceAPI
 
         $this->base_url      = $instanceUrl;
         $this->instance_url  = $instanceUrl.'/services/data/v'.$version.'/';
+        $this->batch_url     = $instanceUrl.'/services/async/'.$version.'/job';
 
         $this->headers = [
             'Content-Type' => 'application/json',
@@ -134,7 +137,6 @@ class SalesforceAPI
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $login_data);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        // curl_setopt($ch, CURLOPT_SSLVERSION, 4);
 
         $ret = curl_exec($ch);
         $err = curl_error($ch);
@@ -153,15 +155,13 @@ class SalesforceAPI
      * afterLoginSetup
      *
      * @param object $loginResponse json_decoded /services/oauth2/token response
-     * @return bool
      */
-    public function afterLoginSetup($loginResponse)
+    protected function afterLoginSetup($loginResponse)
     {
         $this->access_token = $loginResponse->access_token;
         $this->base_url     = $loginResponse->instance_url;
         $this->instance_url = $loginResponse->instance_url.'/services/data/v'.$this->api_version.'/';
-
-        return true;
+        $this->batch_url    = $loginResponse->instance_url.'/services/async/'.$this->api_version.'/job';
     }
 
     /**
@@ -236,9 +236,9 @@ class SalesforceAPI
 
         // Should this return all meta data including information about each field, URLs, and child relationships
         if ($all === true) {
-            return $this->request(self::OBJECT_PATH.$objectName.'/describe/', [], self::METH_GET, $headers);
+            return $this->request(self::OBJECT_PATH.$objectName.'/describe/', [], self::METHOD_GET, $headers);
         } else {
-            return $this->request(self::OBJECT_PATH.$objectName, [], self::METH_GET, $headers);
+            return $this->request(self::OBJECT_PATH.$objectName, [], self::METHOD_GET, $headers);
         }
     }
 
@@ -254,7 +254,7 @@ class SalesforceAPI
      */
     public function create($objectName, $data)
     {
-        return $this->request(self::OBJECT_PATH.(string) $objectName, $data, self::METH_POST);
+        return $this->request(self::OBJECT_PATH.(string) $objectName, $data, self::METHOD_POST);
     }
 
     /**
@@ -270,7 +270,7 @@ class SalesforceAPI
      */
     public function upsert($objectName, $data)
     {
-        return $this->request(self::OBJECT_PATH.(string) $objectName, $data, self::METH_PATCH);
+        return $this->request(self::OBJECT_PATH.(string) $objectName, $data, self::METHOD_PATCH);
     }
 
     /**
@@ -286,7 +286,7 @@ class SalesforceAPI
      */
     public function update($objectName, $objectId, $data)
     {
-        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, $data, self::METH_PATCH);
+        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, $data, self::METHOD_PATCH);
     }
 
     /**
@@ -301,7 +301,7 @@ class SalesforceAPI
      */
     public function delete($objectName, $objectId)
     {
-        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, null, self::METH_DELETE);
+        return $this->request(self::OBJECT_PATH.(string) $objectName.'/'.$objectId, null, self::METHOD_DELETE);
     }
 
     /**
@@ -356,7 +356,7 @@ class SalesforceAPI
             $path = 'query/';
         }
 
-        return $this->request($path, $search_data, self::METH_GET);
+        return $this->request($path, $search_data, self::METHOD_GET);
     }
 
     /**
@@ -384,6 +384,107 @@ class SalesforceAPI
     }
 
     /**
+     * Creates a new batch job instance
+     *
+     * @param string $operation
+     * @param string $object
+     * @param string $contentType
+     * @param string $externalIdFieldName
+     * @return Job
+     */
+    public function createJob($operation, $object, $contentType, $externalIdFieldName = false)
+    {
+      $payload = [
+        "operation"   => $operation,
+        "object"      => $object,
+        "contentType" => $contentType
+      ];
+
+      if ($externalIdFieldName && $operation == Job::OPERATION_UPSERT)
+        $payload['externalIdFieldName'] = $externalIdFieldName;
+
+      $data = $this->httpBatchRequest('', $payload);
+      return new Job($data);
+    }
+
+    /**
+     * Close an open job
+     *
+     * @param Job $job
+     * @return bool
+     */
+    public function closeJob(&$job)
+    {
+      if (!($job instanceof Job) || $job->state != Job::STATE_OPEN)
+      {
+        return false; // can only close an "Open" job
+      }
+
+      $payload = ["state" => Job::STATE_CLOSED];
+
+      $data = $this->httpBatchRequest("/{$job->id}", $payload);
+
+      if ($data['state'] == Job::STATE_CLOSED)
+        $job = new Job($data);
+
+      return $data['state'] == Job::STATE_CLOSED;
+    }
+
+    /**
+     * Get the information about a batch
+     *
+     * @param Job    $job
+     * @param string $batchId
+     * @return array
+     */
+    public function getJobBatches($job)
+    {
+      $data = $this->httpBatchRequest("/{$job->id}/batch", [], self::METHOD_GET);
+      $result = [];
+      foreach ($data['batchInfo'] as $batch)
+      {
+        $result[] = new BatchInfo($batch, $job);
+      }
+      return $result;
+    }
+
+    /**
+     * Add a batch to process inside a job
+     */
+    public function addBatch($job, $payload)
+    {
+      // write json to file
+      // send file as batch
+      // remove tmp json file
+      $data = $this->httpBatchRequest("/{$job->id}/batch", $payload);
+      return new BatchInfo($data, $job);
+    }
+
+    /**
+     * Get the information about a batch
+     *
+     * @param Job    $job
+     * @param string $batchId
+     */
+    public function getBatchInfo($job, $batchId)
+    {
+      $data = $this->httpBatchRequest("/{$job->id}/batch/{$batchId}", [], self::METHOD_GET);
+      return new BatchInfo($data, $job);
+    }
+
+    /**
+     * Get the results about a batch
+     *
+     * @param Job    $job
+     * @param string $batchId
+     * @return array
+     */
+    public function getBatchResults($job, $batchId)
+    {
+      return $this->httpBatchRequest("/{$job->id}/batch/{$batchId}/result", [], self::METHOD_GET);
+    }
+
+    /**
      * Makes a request to the API using the access key.
      *
      * @param string $path    The path to use for the API request
@@ -395,7 +496,7 @@ class SalesforceAPI
      *
      * @throws SalesforceAPIException
      */
-    protected function request($path, $params = [], $method = self::METH_GET, $headers = [])
+    protected function request($path, $params = [], $method = self::METHOD_GET, $headers = [])
     {
         // Throw an error if no access token
         if (!isset($this->access_token)) {
@@ -414,6 +515,28 @@ class SalesforceAPI
     }
 
     /**
+     * Makes an HTTP batch request
+     *
+     * @param string $path
+     * @param array  $payload (default: [])
+     * @param string $method (default: 'POST')
+     */
+    protected function httpBatchRequest($path, $payload = [], $method = self::METHOD_POST)
+    {
+      // Throw an error if no access token
+      if (!isset($this->access_token)) {
+          throw new SalesforceAPIException('You have not logged in yet.');
+      }
+
+      // Set the Authorization header (must be set as session, not Authorization Bearer)
+      $request_headers = [
+          'X-SFDC-Session' => $this->access_token,
+      ];
+
+      return $this->httpRequest($this->batch_url.$path, $payload, $request_headers, $method);
+    }
+
+    /**
      * Performs the actual HTTP request to the Salesforce API.
      *
      * @param string     $url
@@ -425,7 +548,7 @@ class SalesforceAPI
      *
      * @throws SalesforceAPIException
      */
-    protected function httpRequest($url, $params = null, $headers = null, $method = self::METH_GET)
+    protected function httpRequest($url, $params = null, $headers = null, $method = self::METHOD_GET)
     {
         $this->handle = curl_init();
         $options = [
