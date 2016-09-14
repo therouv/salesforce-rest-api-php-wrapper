@@ -37,8 +37,13 @@ $users = [
   ]
 ];
 $batchInfo = $salesforce->addBatch($job, $users);
-$salesforce->closeJob($job);
+
+$job = $salesforce->closeJob($job);
 
 sleep(10); // wait for salesforce to process the batch
-$updatedBbatchInfo = $salesforce->getBatchInfo($job, $batchInfo->id);
-$batchResult = $salesforce->getBatchResults($job, $batchInfo->id);
+$batchInfo = $salesforce->getBatchInfo($job, $batchInfo);
+$batchResult = $salesforce->getBatchResults($job, $batchInfo);
+
+// abort job
+$job2 = $salesforce->createJob(Job::OPERATION_INSERT, 'Lead', Job::TYPE_JSON);
+$job2 = $salesforce->abortJob($job2);
