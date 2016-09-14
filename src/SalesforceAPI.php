@@ -408,80 +408,211 @@ class SalesforceAPI
     }
 
     /**
-     * Close an open job
+     * Resolves the given data to a Job Id
      *
-     * @param Job $job
-     * @return bool
+     * @param mixed $data
+     * @return string
+     * @throws SalesforceAPIException
      */
-    public function closeJob(&$job)
+    private function resolveToJobId($data)
     {
-      if (!($job instanceof Job) || $job->state != Job::STATE_OPEN)
+      $jobId = false;
+      if (is_string($data))
       {
-        return false; // can only close an "Open" job
+        $jobId = $data;
+      }
+      elseif ($data instanceof Job)
+      {
+        $jobId = $data->id;
       }
 
-      $payload = ["state" => Job::STATE_CLOSED];
+      if (!$jobId)
+      {
+        throw new SalesforceAPIException("A Job ID or instance of Job must be provided.");
+      }
+      return $jobId;
+    }
 
-      $data = $this->httpBatchRequest("/{$job->id}", $payload);
+    /**
+     * Resolves the given data to a BatchInfo Id
+     *
+     * @param mixed $data
+     * @return string
+     * @throws SalesforceAPIException
+     */
+    private function resolveToBatchInfoId($data)
+    {
+      $batchInfoId = false;
+      if (is_string($data))
+      {
+        $batchInfoId = $data;
+      }
+      elseif ($data instanceof BatchInfo)
+      {
+        $batchInfoId = $data->id;
+      }
 
-      if ($data['state'] == Job::STATE_CLOSED)
-        $job = new Job($data);
+      if (!$batchInfoId)
+      {
+        throw new SalesforceAPIException("A BatchInfo ID or instance of BatchInfo must be provided.");
+      }
+      return $batchInfoId;
+    }
 
-      return $data['state'] == Job::STATE_CLOSED;
+    /**
+     * Close an open job
+     *
+     * @param mixed $job
+     * @return Job
+     * @throws SalesforceAPIException
+     */
+    public function closeJob($job)
+    {
+      $jobId = $this->resolveToJobId($job);
+
+      $payload = [ 'state' => Job::STATE_CLOSED ];
+      $data = $this->httpBatchRequest( "/{$jobId}", $payload );
+
+      if ( $data['state'] != Job::STATE_CLOSED )
+      {
+        throw new SalesforceAPIException("Job {$jobId} could not be closed.");
+      }
+
+      return new Job($data);
+    }
+
+    /**
+     * Close an open job
+     *
+     * @param mixed $job
+     * @return Job
+     * @throws SalesforceAPIException
+     */
+    public function abortJob($job)
+    {
+      $jobId = $this->resolveToJobId($job);
+
+      $payload = [ 'state' => Job::STATE_ABORTED ];
+      $data = $this->httpBatchRequest( "/{$job->id}", $payload );
+
+      if ( $data['state'] != Job::STATE_ABORTED )
+      {
+        throw new SalesforceAPIException("Job {$jobId} could not be aborted.");
+      }
+
+      return new Job($data);
+    }
+
+    /**
+     * Return the job by Job ID
+     *
+     * @param mixed $jobId
+     * @return Job
+     * @throws SalesforceAPIException
+     */
+    public function getJob( $job )
+    {
+      $jobId = $this->resolveToJobId( $job );
+
+      $data = $this->httpBatchRequest( "/{$jobId}", [], self::METHOD_GET );
+
+      return new Job($data);
     }
 
     /**
      * Get the information about a batch
      *
-     * @param Job    $job
-     * @param string $batchId
+     * @param mixed $job
      * @return array
+     * @throws SalesforceAPIException
      */
-    public function getJobBatches($job)
+    public function getJobBatches( $job )
     {
-      $data = $this->httpBatchRequest("/{$job->id}/batch", [], self::METHOD_GET);
-      $result = [];
-      foreach ($data['batchInfo'] as $batch)
+      $jobId = $this->resolveToJobId( $job );
+
+      $data = $this->httpBatchRequest( "/{$jobId}/batch", [], self::METHOD_GET );
+
+      if ( !$job instanceof Job )
       {
-        $result[] = new BatchInfo($batch, $job);
+        $job = $this->getJob( $job );
+      }
+
+      $result = [];
+      foreach ( $data['batchInfo'] as $batch )
+      {
+        $result[] = new BatchInfo( $batch, $job );
       }
       return $result;
     }
 
     /**
      * Add a batch to process inside a job
+     *
+     * @param mixed $job
+     * @param mixed $payload
+     * @return BatchInfo
      */
-    public function addBatch($job, $payload)
+    public function addBatch( $job, $payload )
     {
-      // write json to file
-      // send file as batch
-      // remove tmp json file
-      $data = $this->httpBatchRequest("/{$job->id}/batch", $payload);
-      return new BatchInfo($data, $job);
+      $jobId = $this->resolveToJobId( $job );
+
+      $data = $this->httpBatchRequest( "/{$jobId}/batch", $payload );
+
+      if ( !$job instanceof Job )
+      {
+        $job = $this->getJob( $job );
+      }
+
+      return new BatchInfo( $data, $job );
     }
 
     /**
      * Get the information about a batch
      *
-     * @param Job    $job
-     * @param string $batchId
+     * @param mixed $job
+     * @param mixed $batchId
+     * @return BatchInfo
      */
-    public function getBatchInfo($job, $batchId)
+    public function getBatchInfo($job, $batchInfo)
     {
-      $data = $this->httpBatchRequest("/{$job->id}/batch/{$batchId}", [], self::METHOD_GET);
+      $jobId = $this->resolveToJobId($job);
+      $batchId = $this->resolveToBatchInfoId($batchInfo);
+
+      $data = $this->httpBatchRequest("/{$jobId}/batch/{$batchId}", [], self::METHOD_GET);
+
+      if (!$job instanceof Job)
+      {
+        $job = $this->getJob($job);
+      }
+
       return new BatchInfo($data, $job);
     }
 
     /**
      * Get the results about a batch
      *
-     * @param Job    $job
-     * @param string $batchId
+     * @param mixed $job
+     * @param mixed $batchInfo
      * @return array
      */
-    public function getBatchResults($job, $batchId)
+    public function getBatchResults($job, $batchInfo)
     {
-      return $this->httpBatchRequest("/{$job->id}/batch/{$batchId}/result", [], self::METHOD_GET);
+      $jobId = $this->resolveToJobId($job);
+      $batchId = $this->resolveToBatchInfoId($batchInfo);
+
+      $data = $this->httpBatchRequest("/{$jobId}/batch/{$batchId}/result", [], self::METHOD_GET);
+
+      if (!$batchInfo instanceof BatchInfo)
+      {
+        $batchInfo = $this->getBatchInfo($job,$batchInfo);
+      }
+
+      $result = [];
+      foreach ( $data as $batchResult )
+      {
+        $result[] = new BatchResult($batchResult, $batchInfo);
+      }
+      return $result;
     }
 
     /**
