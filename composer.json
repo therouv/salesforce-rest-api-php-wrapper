@@ -14,7 +14,7 @@
   },
   "autoload": {
     "psr-4": {
-      "SalesforceRestAPI\\": "src/"
+      "Salesforce\\Rest\\": "src/"
     }
   },
   "require-dev": {

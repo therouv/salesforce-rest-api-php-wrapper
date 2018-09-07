@@ -1,4 +1,4 @@
-<?php namespace SalesforceRestAPI;
+<?php namespace Salesforce\Rest;
 
 /**
  * The job class used for batch operations
