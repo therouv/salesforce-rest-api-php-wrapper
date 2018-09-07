@@ -179,7 +179,7 @@ class SalesforceAPI
      */
     public function getOrgLimits()
     {
-        return $this->request('limits/');
+        return $this->requestInstance('limits/');
     }
 
     /**
@@ -190,7 +190,7 @@ class SalesforceAPI
      */
     public function getAvailableResources()
     {
-        return $this->request('');
+        return $this->requestInstance('');
     }
 
     /**
@@ -201,7 +201,7 @@ class SalesforceAPI
      */
     public function getAllObjects()
     {
-        return $this->request(self::OBJECT_PATH);
+        return $this->requestInstance(self::OBJECT_PATH);
     }
 
     /**
@@ -226,9 +226,9 @@ class SalesforceAPI
 
         // Should this return all meta data including information about each field, URLs, and child relationships
         if ($all === true) {
-            return $this->request(self::OBJECT_PATH . $objectName . '/describe/', [], self::METHOD_GET, $headers);
+            return $this->requestInstance(self::OBJECT_PATH . $objectName . '/describe/', [], self::METHOD_GET, $headers);
         } else {
-            return $this->request(self::OBJECT_PATH . $objectName, [], self::METHOD_GET, $headers);
+            return $this->requestInstance(self::OBJECT_PATH . $objectName, [], self::METHOD_GET, $headers);
         }
     }
 
@@ -242,7 +242,7 @@ class SalesforceAPI
      */
     public function create($objectName, $data)
     {
-        return $this->request(self::OBJECT_PATH . (string)$objectName, $data, self::METHOD_POST);
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName, $data, self::METHOD_POST);
     }
 
     /**
@@ -257,7 +257,7 @@ class SalesforceAPI
      */
     public function upsert($objectName, $data)
     {
-        return $this->request(self::OBJECT_PATH . (string)$objectName, $data, self::METHOD_PATCH);
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName, $data, self::METHOD_PATCH);
     }
 
     /**
@@ -271,7 +271,7 @@ class SalesforceAPI
      */
     public function update($objectName, $objectId, $data)
     {
-        return $this->request(self::OBJECT_PATH . (string)$objectName . '/' . $objectId, $data, self::METHOD_PATCH);
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . $objectId, $data, self::METHOD_PATCH);
     }
 
     /**
@@ -284,7 +284,7 @@ class SalesforceAPI
      */
     public function delete($objectName, $objectId)
     {
-        return $this->request(self::OBJECT_PATH . (string)$objectName . '/' . $objectId, null, self::METHOD_DELETE);
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . $objectId, null, self::METHOD_DELETE);
     }
 
     /**
@@ -305,7 +305,7 @@ class SalesforceAPI
             $params['fields'] = implode(',', $fields);
         }
 
-        return $this->request(self::OBJECT_PATH . (string)$objectName . '/' . $objectId, $params);
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . $objectId, $params);
     }
 
     /**
@@ -334,7 +334,7 @@ class SalesforceAPI
             $path = 'query/';
         }
 
-        return $this->request($path, $searchData, self::METHOD_GET);
+        return $this->requestInstance($path, $searchData, self::METHOD_GET);
     }
 
     /**
@@ -344,20 +344,7 @@ class SalesforceAPI
      */
     public function getQueryFromUrl($query)
     {
-        // Throw an error if no access token
-        if (!isset($this->accessToken)) {
-            throw new SalesforceAPIException('You have not logged in yet.');
-        }
-
-        // Set the Authorization header
-        $requestHeaders = [
-            'Authorization' => 'Bearer ' . $this->accessToken,
-        ];
-
-        // Merge all the headers
-        $requestHeaders = array_merge($requestHeaders, []);
-
-        return $this->httpRequest($this->baseUrl . $query, [], $requestHeaders);
+        return $this->requestBase($query, [], self::METHOD_GET, []);
     }
 
     /**
@@ -585,17 +572,46 @@ class SalesforceAPI
     }
 
     /**
-     * Makes a request to the API using the access key.
+     * Makes a request to the API using the base url and the given path using the access key.
      *
-     * @param string $path The path to use for the API request
+     * @param string $path
      * @param array  $params
      * @param string $method
      * @param array  $headers
      * @return mixed
-     *
      * @throws SalesforceAPIException
      */
-    protected function request($path, $params = [], $method = self::METHOD_GET, $headers = [])
+    public function requestBase($path, $params = [], $method = self::METHOD_GET, $headers = [])
+    {
+        return $this->request($this->baseUrl . $path, $params, $method, $headers);
+    }
+
+    /**
+     * Makes a request to the API using the instance url and the given path using the access key.
+     *
+     * @param string $path
+     * @param array  $params
+     * @param string $method
+     * @param array  $headers
+     * @return mixed
+     * @throws SalesforceAPIException
+     */
+    public function requestInstance($path, $params = [], $method = self::METHOD_GET, $headers = [])
+    {
+        return $this->request($this->instanceUrl . $path, $params, $method, $headers);
+    }
+
+    /**
+     * Makes a request to the API using the access key.
+     *
+     * @param string $url
+     * @param array  $params
+     * @param string $method
+     * @param array  $headers
+     * @return mixed
+     * @throws SalesforceAPIException
+     */
+    private function request($url, $params = [], $method = self::METHOD_GET, $headers = [])
     {
         if (!isset($this->accessToken)) {
             throw new SalesforceAPIException('You have not logged in yet.');
@@ -609,7 +625,7 @@ class SalesforceAPI
         // Merge all the headers
         $requestHeaders = array_merge($requestHeaders, $headers);
 
-        return $this->httpRequest($this->instanceUrl . $path, $params, $requestHeaders, $method);
+        return $this->httpRequest($url, $params, $requestHeaders, $method);
     }
 
     /**
@@ -621,7 +637,7 @@ class SalesforceAPI
      * @return mixed
      * @throws SalesforceAPIException
      */
-    protected function httpBatchRequest($path, $payload = [], $method = self::METHOD_POST)
+    private function httpBatchRequest($path, $payload = [], $method = self::METHOD_POST)
     {
         if (!isset($this->accessToken)) {
             throw new SalesforceAPIException('You have not logged in yet.');
@@ -645,7 +661,7 @@ class SalesforceAPI
      * @return mixed
      * @throws SalesforceAPIException
      */
-    protected function httpRequest($url, $params = null, $headers = null, $method = self::METHOD_GET)
+    private function httpRequest($url, $params = null, $headers = null, $method = self::METHOD_GET)
     {
         $this->handle = curl_init();
         $options = [
