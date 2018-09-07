@@ -1,6 +1,8 @@
 <?php namespace Salesforce\Rest;
 
 use DateTime;
+use Salesforce\Rest\Batch\Info as BatchInfo;
+use Salesforce\Rest\Batch\Result as BatchResult;
 use Salesforce\Rest\Exception\AuthorizationException;
 use Salesforce\Rest\Exception\RequestException;
 

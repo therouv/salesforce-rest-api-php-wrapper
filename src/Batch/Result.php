@@ -1,22 +1,22 @@
-<?php namespace Salesforce\Rest;
+<?php namespace Salesforce\Rest\Batch;
 
 /**
  * The BatchResult class used for batch operations
  */
-class BatchResult
+class Result
 {
     /**
-     * @var BatchInfo
+     * @var Info
      */
     protected $batchInfo;
 
     /**
      * constructor
      *
-     * @param array     $data
-     * @param BatchInfo $batchInfo
+     * @param array $data
+     * @param Info  $batchInfo
      */
-    public function __construct($data, BatchInfo $batchInfo)
+    public function __construct($data, Info $batchInfo)
     {
         foreach ($data as $k => $v) {
             $this->{$k} = $v;
@@ -28,7 +28,7 @@ class BatchResult
     /**
      * Return the associated BatchInfo
      *
-     * @return BatchInfo
+     * @return Info
      */
     public function getBatchInfo()
     {

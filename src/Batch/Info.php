@@ -1,9 +1,11 @@
-<?php namespace Salesforce\Rest;
+<?php namespace Salesforce\Rest\Batch;
+
+use Salesforce\Rest\Job;
 
 /**
  * The BatchInfo class used for batch operations
  */
-class BatchInfo
+class Info
 {
     const STATE_QUEUED = 'Queued';
     const STATE_IN_PROGRESS = 'InProgress';
