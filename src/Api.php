@@ -158,46 +158,11 @@ class Api
      *
      * @return mixed
      * @throws RequestException
+     * @throws AuthorizationException
      */
     public function getApiVersions()
     {
-        return $this->httpRequest($this->baseUrl . '/services/data');
-    }
-
-    /**
-     * Lists the limits for the organization. This is in beta and won't return for most people.
-     *
-     * @return mixed
-     * @throws AuthorizationException
-     * @throws RequestException
-     */
-    public function getOrgLimits()
-    {
-        return $this->requestInstance('limits/');
-    }
-
-    /**
-     * Gets a list of all the available REST resources.
-     *
-     * @return mixed
-     * @throws AuthorizationException
-     * @throws RequestException
-     */
-    public function getAvailableResources()
-    {
-        return $this->requestInstance('');
-    }
-
-    /**
-     * Get a list of all available objects for the organization.
-     *
-     * @return mixed
-     * @throws AuthorizationException
-     * @throws RequestException
-     */
-    public function getAllObjects()
-    {
-        return $this->requestInstance(self::OBJECT_PATH);
+        return $this->requestBase('/services/data');
     }
 
     /**
