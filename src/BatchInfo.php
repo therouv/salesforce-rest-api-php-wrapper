@@ -5,41 +5,39 @@
  */
 class BatchInfo
 {
-  const STATE_QUEUED        = 'Queued';
-  const STATE_IN_PROGRESS   = 'InProgress';
-  const STATE_COMPLETED     = 'Completed';
-  const STATE_FAILED        = 'Failed';
-  const STATE_NOT_PROCESSED = 'Not Processed';
+    const STATE_QUEUED = 'Queued';
+    const STATE_IN_PROGRESS = 'InProgress';
+    const STATE_COMPLETED = 'Completed';
+    const STATE_FAILED = 'Failed';
+    const STATE_NOT_PROCESSED = 'Not Processed';
 
-  /**
-   * @var Job
-   */
-  protected $job;
+    /**
+     * @var Job
+     */
+    protected $job;
 
-  /**
-   * constructor
-   *
-   * @param array $data
-   * @param Job   $job
-   */
-  public function __construct($data, Job $job)
-  {
-    // getto dynamic loader
-    foreach ($data as $k => $v)
+    /**
+     * constructor
+     *
+     * @param array $data
+     * @param Job   $job
+     */
+    public function __construct($data, Job $job)
     {
-      $this->{$k} = $v;
+        foreach ($data as $k => $v) {
+            $this->{$k} = $v;
+        }
+
+        $this->job = $job;
     }
 
-    $this->job = $job;
-  }
-
-  /**
-   * Return associated Job
-   *
-   * @return Job
-   */
-  public function getJob()
-  {
-    return $this->job;
-  }
+    /**
+     * Return associated Job
+     *
+     * @return Job
+     */
+    public function getJob()
+    {
+        return $this->job;
+    }
 }
