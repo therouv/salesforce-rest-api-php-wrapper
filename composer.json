@@ -1,8 +1,10 @@
 {
-  "name": "mcorrigan/salesforce-rest-api-php-wrapper",
+  "name": "therouv/salesforce-rest-api-php-wrapper",
   "type": "library",
   "description": "SalesForce REST API PHP Wrapper",
-  "keywords": ["salesforce"],
+  "keywords": [
+    "salesforce"
+  ],
   "homepage": "https://github.com/mcorrigan/salesforce-rest-api-php-wrapper",
   "license": "GNU-2.0",
   "require": {
