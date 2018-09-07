@@ -90,23 +90,23 @@ class Api
      *
      * This sets up the connection to salesforce and instantiates all default variables
      *
-     * @param string     $instanceUrl  The url to connect to
+     * @param string     $baseUrl      The url to connect to
      * @param string|int $version      The version of the API to connect to
      * @param string     $clientId     The Consumer Key from Salesforce
      * @param string     $clientSecret The Consumer Secret from Salesforce
      */
-    public function __construct($instanceUrl, $version, $clientId, $clientSecret, $returnType = self::RETURN_ARRAY_A)
+    public function __construct($baseUrl, $version, $clientId, $clientSecret, $returnType = self::RETURN_ARRAY_A)
     {
         // Instantiate base variables
-        $this->instanceUrl = $instanceUrl;
+        $this->instanceUrl = $baseUrl;
         $this->apiVersion = $version;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->returnType = $returnType;
 
-        $this->baseUrl = $instanceUrl;
-        $this->instanceUrl = $instanceUrl . '/services/data/v' . $version . '/';
-        $this->batchUrl = $instanceUrl . '/services/async/' . $version . '/job';
+        $this->baseUrl = $baseUrl;
+        $this->instanceUrl = $baseUrl . '/services/data/v' . $version . '/';
+        $this->batchUrl = $baseUrl . '/services/async/' . $version . '/job';
 
         $this->headers = [
             'Content-Type' => 'application/json',
@@ -163,6 +163,42 @@ class Api
     public function getApiVersions()
     {
         return $this->requestBase('/services/data');
+    }
+
+    /**
+     * Lists the limits for the organization. This is in beta and won't return for most people.
+     *
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function getOrgLimits()
+    {
+        return $this->requestInstance('limits/');
+    }
+
+    /**
+     * Gets a list of all the available REST resources.
+     *
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function getAvailableResources()
+    {
+        return $this->requestInstance('');
+    }
+
+    /**
+     * Get a list of all available objects for the organization.
+     *
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function getAllObjects()
+    {
+        return $this->requestInstance(self::OBJECT_PATH);
     }
 
     /**
