@@ -6,7 +6,7 @@
     "salesforce"
   ],
   "homepage": "https://github.com/mcorrigan/salesforce-rest-api-php-wrapper",
-  "license": "GNU-2.0",
+  "license": "GPL-2.0-only",
   "require": {
     "php": ">=5.4",
     "ext-curl": "*",
