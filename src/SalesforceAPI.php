@@ -401,8 +401,9 @@ class SalesforceAPI
             "contentType" => $contentType,
         ];
 
-        if ($externalIdFieldName && $operation == Job::OPERATION_UPSERT)
+        if ($externalIdFieldName && $operation == Job::OPERATION_UPSERT) {
             $payload['externalIdFieldName'] = $externalIdFieldName;
+        }
 
         $data = $this->httpBatchRequest('', $payload);
 
