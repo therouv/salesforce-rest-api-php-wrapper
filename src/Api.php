@@ -85,6 +85,7 @@ class Api
 
     const LOGIN_PATH = '/services/oauth2/token';
     const OBJECT_PATH = 'sobjects/';
+    const COMPOSITE_PATH = 'composite/sobjects';
     const GRANT_TYPE = 'password';
 
     /**
@@ -339,6 +340,69 @@ class Api
         }
 
         return $this->requestInstance($path, $searchData, self::METHOD_GET);
+    }
+
+    /**
+     * Since API version v42.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm
+     *
+     * @param array $records
+     * @param bool $allOrNone
+     * @return mixed
+     * @throws RequestException
+     */
+    public function compositeCreate(array $records, $allOrNone = false)
+    {
+        return $this->requestComposite([
+            'records' => $records,
+            'allOrNone' => $allOrNone,
+        ], self::METHOD_POST);
+    }
+
+    /**
+     * Since API version v42.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_update.htm
+     *
+     * @param array $records
+     * @param bool $allOrNone
+     * @return mixed
+     * @throws RequestException
+     */dddd
+    public function compositeUpdate(array $records, $allOrNone = false)
+    {
+        return $this->requestComposite([
+            'records' => $records,
+            'allOrNone' => $allOrNone,
+        ], self::METHOD_PATCH);
+    }
+
+    /**
+     * Since API version v42.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_delete.htm
+     *
+     * @param array $ids
+     * @return mixed
+     * @throws RequestException
+     */
+    public function compositeDelete(array $ids)
+    {
+        return $this->requestComposite([
+            'ids' => $ids,
+        ], self::METHOD_DELETE);
+    }
+
+    /**
+     * Since API version v42.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_retrieve.htm
+     *
+     * @param string $objectName
+     * @param array $ids
+     * @param array $fields
+     * @return mixed
+     * @throws RequestException
+     */
+    public function compositeGet($objectName, array $ids, array $fields)
+    {
+        return $this->requestComposite([
+            'ids' => $ids,
+            'fields' => $fields,
+        ], self::METHOD_GET, $objectName);
     }
 
     /**
@@ -614,6 +678,36 @@ class Api
     public function requestInstance($path, $params = [], $method = self::METHOD_GET, $headers = [])
     {
         return $this->request($this->instanceUrl . $path, $params, $method, $headers);
+    }
+
+    /**
+     * @param $params
+     * @param string $method
+     * @param $objectName
+     * @return mixed
+     * @throws RequestException
+     */
+    public function requestComposite($params, $method = self::METHOD_GET, $objectName = null)
+    {
+        if (!in_array($method, [self::METHOD_DELETE, self::METHOD_GET, self::METHOD_PATCH, self::METHOD_POST])) {
+            throw new RequestException('Invalid method');
+        }
+
+        // check if supported
+        if (intval($this->apiVersion) < 42) {
+            throw new RequestException('Composite requests are supported from API version v42.0, you are on v' . $this->apiVersion);
+        }
+
+        if (self::METHOD_GET === $method && !$objectName) {
+            throw new RequestException('Composite retrieval but not supplying object name');
+        }
+
+        $query = '';
+        if (self::METHOD_DELETE === $method) {
+            $query = '?ids=' . implode(',', $params['ids']);
+        }
+
+        return $this->requestInstance(self::COMPOSITE_PATH . (self::METHOD_GET === $method ? '/' . $objectName : '') . $query, $params, (self::METHOD_GET === $method ? self::METHOD_POST : $method));
     }
 
     /**
