@@ -343,6 +343,54 @@ class Api
     }
 
     /**
+     * Since API version v36.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_search_parameterized.htm
+     *
+     * @param $query
+     * @param array $optionalParameters
+     * @param string $method
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function parameterizedSearch($query, $optionalParameters = [], $method = self::METHOD_GET)
+    {
+        // check if supported
+        if (intval($this->apiVersion) < 36) {
+            throw new RequestException('Parameterized search is supported from API version v36.0, you are on v' . $this->apiVersion . '. Check out the regular search for parameterized searching.');
+        }
+
+        // check if supported method
+        if (self::METHOD_GET !== $method && self::METHOD_POST !== $method) {
+            throw new RequestException('Unsupported method, only GET & POST methods are allowed.');
+        }
+
+        if (isset($optionalParameters['dataCategories']) && self::METHOD_POST !== $method) {
+            throw new RequestException('Multiple categories are only available when using a POST method.');
+        }
+
+        if (isset($optionalParameters['dataCategory']) && self::METHOD_GET !== $method) {
+            throw new RequestException('Single category filter is only available when using a GET method.');
+        }
+
+        // check array parameters
+        foreach (['fields', 'networkIds', 'sobjects'] as $parameter) {
+            if (isset($optionalParameters[$parameter]) && is_array($optionalParameters[$parameter]) && self::METHOD_POST != $method) {
+                throw new RequestException($parameter . ' as array is only supported with POST method.');
+            }
+        }
+
+        // if fields is comma separated string check if objects is set
+        if (isset($optionalParameters['fields']) && is_string($optionalParameters['fields']) && (!isset($optionalParameters['sobjects']) || !$optionalParameters['sobjects'])) {
+            throw new RequestException('Missing parameter "sobjects" when defining fields.');
+        }
+
+        // combine
+        $searchData = array_merge(['q' => $query], $optionalParameters);
+
+        return $this->requestInstance('parameterizedSearch/', $searchData, $method);
+    }
+
+    /**
      * Since API version v42.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm
      *
      * @param array $records
@@ -365,7 +413,7 @@ class Api
      * @param bool $allOrNone
      * @return mixed
      * @throws RequestException
-     */dddd
+     */
     public function compositeUpdate(array $records, $allOrNone = false)
     {
         return $this->requestComposite([
