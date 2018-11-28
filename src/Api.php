@@ -343,6 +343,79 @@ class Api
     }
 
     /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @param array $data
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function createByExternalId($objectName, $fieldName, $externalId, array $data)
+    {
+        return $this->upsertByExternalId($objectName, $fieldName, $externalId, $data);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @param array $data
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function upsertByExternalId($objectName, $fieldName, $externalId, array $data)
+    {
+        // if field is in data, unset to prevent unnecessary error
+        if (isset($data[$fieldName])) {
+            unset($data[$fieldName]);
+        }
+
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . (string)$fieldName . '/' . (string)$externalId, $data, self::METHOD_PATCH);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @param array $data
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function updateByExternalId($objectName, $fieldName, $externalId, array $data)
+    {
+        return $this->upsertByExternalId($objectName, $fieldName, $externalId, $data);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function deleteByExternalId($objectName, $fieldName, $externalId)
+    {
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . (string)$fieldName . '/' . (string)$externalId, null, self::METHOD_DELETE);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function getByExternalId($objectName, $fieldName, $externalId)
+    {
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . (string)$fieldName . '/' . (string)$externalId);
+    }
+
+    /**
      * Since API version v42.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_composite_sobjects_collections_create.htm
      *
      * @param array $records
@@ -365,7 +438,7 @@ class Api
      * @param bool $allOrNone
      * @return mixed
      * @throws RequestException
-     */dddd
+     */
     public function compositeUpdate(array $records, $allOrNone = false)
     {
         return $this->requestComposite([
