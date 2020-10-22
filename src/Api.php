@@ -93,10 +93,10 @@ class Api
      *
      * This sets up the connection to salesforce and instantiates all default variables
      *
-     * @param string     $baseUrl      The url to connect to
-     * @param string|int $version      The version of the API to connect to
-     * @param string     $clientId     The Consumer Key from Salesforce
-     * @param string     $clientSecret The Consumer Secret from Salesforce
+     * @param string $baseUrl The url to connect to
+     * @param string|int $version The version of the API to connect to
+     * @param string $clientId The Consumer Key from Salesforce
+     * @param string $clientSecret The Consumer Secret from Salesforce
      */
     public function __construct($baseUrl, $version, $clientId, $clientSecret, $returnType = self::RETURN_ARRAY_A)
     {
@@ -128,11 +128,11 @@ class Api
     public function login($username, $password, $securityToken)
     {
         $loginData = [
-            'grant_type'    => self::GRANT_TYPE,
-            'client_id'     => $this->clientId,
+            'grant_type' => self::GRANT_TYPE,
+            'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
-            'username'      => $username,
-            'password'      => $password . $securityToken,
+            'username' => $username,
+            'password' => $password . $securityToken,
         ];
 
         $ch = curl_init();
@@ -207,8 +207,8 @@ class Api
     /**
      * Get metadata about an Object.
      *
-     * @param string   $objectName
-     * @param bool     $all   Should this return all meta data including information about each field, URLs, and child relationships
+     * @param string $objectName
+     * @param bool $all Should this return all meta data including information about each field, URLs, and child relationships
      * @param DateTime $since Only return metadata if it has been modified since the date provided
      * @return mixed
      * @throws RequestException
@@ -237,7 +237,7 @@ class Api
      * Create a new record.
      *
      * @param string $objectName
-     * @param array  $data
+     * @param array $data
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -251,7 +251,7 @@ class Api
      * Update or Insert a record based on an external field and value.
      *
      * @param string $objectName object_name/field_name/field_value to identify the record
-     * @param array  $data
+     * @param array $data
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -266,7 +266,7 @@ class Api
      *
      * @param string $objectName
      * @param string $objectId
-     * @param array  $data
+     * @param array $data
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -293,8 +293,8 @@ class Api
     /**
      * Get a record.
      *
-     * @param string     $objectName
-     * @param string     $objectId
+     * @param string $objectName
+     * @param string $objectId
      * @param array|null $fields
      * @return mixed
      * @throws AuthorizationException
@@ -315,9 +315,9 @@ class Api
     /**
      * Searches using a SOQL Query.
      *
-     * @param string $query   The query to perform
-     * @param bool   $all     Search through deleted and merged data as well
-     * @param bool   $explain If the explain flag is set, it will return feedback on the query performance
+     * @param string $query The query to perform
+     * @param bool $all Search through deleted and merged data as well
+     * @param bool $explain If the explain flag is set, it will return feedback on the query performance
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -388,6 +388,79 @@ class Api
         $searchData = array_merge(['q' => $query], $optionalParameters);
 
         return $this->requestInstance('parameterizedSearch/', $searchData, $method);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @param array $data
+     * @return false|mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function createByExternalId($objectName, $fieldName, $externalId, array $data)
+    {
+        return $this->upsertByExternalId($objectName, $fieldName, $externalId, $data);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @param array $data
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function upsertByExternalId($objectName, $fieldName, $externalId, array $data)
+    {
+        // if field is in data, unset to prevent unnecessary error
+        if (isset($data[$fieldName])) {
+            unset($data[$fieldName]);
+        }
+
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . (string)$fieldName . '/' . (string)$externalId, $data, self::METHOD_PATCH);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @param array $data
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function updateByExternalId($objectName, $fieldName, $externalId, array $data)
+    {
+        return $this->upsertByExternalId($objectName, $fieldName, $externalId, $data);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function deleteByExternalId($objectName, $fieldName, $externalId)
+    {
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . (string)$fieldName . '/' . (string)$externalId, null, self::METHOD_DELETE);
+    }
+
+    /**
+     * @param $objectName
+     * @param $fieldName
+     * @param $externalId
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function getByExternalId($objectName, $fieldName, $externalId)
+    {
+        return $this->requestInstance(self::OBJECT_PATH . (string)$objectName . '/' . (string)$fieldName . '/' . (string)$externalId);
     }
 
     /**
@@ -467,9 +540,9 @@ class Api
     /**
      * Creates a new batch job instance
      *
-     * @param string      $operation
-     * @param string      $object
-     * @param string      $contentType
+     * @param string $operation
+     * @param string $object
+     * @param string $contentType
      * @param string|bool $externalIdFieldName
      * @return Job
      * @throws AuthorizationException
@@ -478,8 +551,8 @@ class Api
     public function createJob($operation, $object, $contentType, $externalIdFieldName = false)
     {
         $payload = [
-            'operation'   => $operation,
-            'object'      => $object,
+            'operation' => $operation,
+            'object' => $object,
             'contentType' => $contentType,
         ];
 
@@ -700,9 +773,9 @@ class Api
      * Makes a request to the API using the base url and the given path using the access key.
      *
      * @param string $path
-     * @param array  $params
+     * @param array $params
      * @param string $method
-     * @param array  $headers
+     * @param array $headers
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -716,9 +789,9 @@ class Api
      * Makes a request to the API using the instance url and the given path using the access key.
      *
      * @param string $path
-     * @param array  $params
+     * @param array $params
      * @param string $method
-     * @param array  $headers
+     * @param array $headers
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -762,9 +835,9 @@ class Api
      * Makes a request to the API using the access key.
      *
      * @param string $url
-     * @param array  $params
+     * @param array $params
      * @param string $method
-     * @param array  $headers
+     * @param array $headers
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -790,8 +863,8 @@ class Api
      * Makes an HTTP batch request
      *
      * @param string $path
-     * @param array  $payload (default: [])
-     * @param string $method  (default: 'POST')
+     * @param array $payload (default: [])
+     * @param string $method (default: 'POST')
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -813,10 +886,10 @@ class Api
     /**
      * Performs the actual HTTP request to the Salesforce API.
      *
-     * @param string     $url
+     * @param string $url
      * @param array|null $params
      * @param array|null $headers
-     * @param string     $method
+     * @param string $method
      * @return mixed
      * @throws RequestException
      */
@@ -825,10 +898,10 @@ class Api
         $this->handle = curl_init();
         $options = [
             CURLOPT_CONNECTTIMEOUT => 2,
-            CURLOPT_TIMEOUT        => 60,
+            CURLOPT_TIMEOUT => 60,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_BUFFERSIZE     => 128000,
-            CURLINFO_HEADER_OUT    => true,
+            CURLOPT_BUFFERSIZE => 128000,
+            CURLINFO_HEADER_OUT => true,
         ];
         curl_setopt_array($this->handle, $options);
 
@@ -905,8 +978,8 @@ class Api
      *
      * @see http://www.salesforce.com/us/developer/docs/api_rest/index_Left.htm#CSHID=errorcodes.htm|StartTopic=Content%2Ferrorcodes.htm|SkinName=webhelp
      *
-     * @param string   $response The response from the server
-     * @param Resource $handle   The CURL handle
+     * @param string $response The response from the server
+     * @param Resource $handle The CURL handle
      * @return string The response from the API
      * @throws RequestException
      */
