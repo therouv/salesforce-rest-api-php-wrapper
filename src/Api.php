@@ -62,6 +62,11 @@ class Api
     protected $headers;
 
     /**
+     * @var array
+     */
+    protected $options;
+
+    /**
      * @var resource
      */
     private $handle;
@@ -93,12 +98,14 @@ class Api
      *
      * This sets up the connection to salesforce and instantiates all default variables
      *
-     * @param string     $baseUrl      The url to connect to
-     * @param string|int $version      The version of the API to connect to
-     * @param string     $clientId     The Consumer Key from Salesforce
-     * @param string     $clientSecret The Consumer Secret from Salesforce
+     * @param string $baseUrl The url to connect to
+     * @param string|int $version The version of the API to connect to
+     * @param string $clientId The Consumer Key from Salesforce
+     * @param string $clientSecret The Consumer Secret from Salesforce
+     * @param string $returnType
+     * @param array $config
      */
-    public function __construct($baseUrl, $version, $clientId, $clientSecret, $returnType = self::RETURN_ARRAY_A)
+    public function __construct($baseUrl, $version, $clientId, $clientSecret, $returnType = self::RETURN_ARRAY_A, $config = [])
     {
         // Instantiate base variables
         $this->instanceUrl = $baseUrl;
@@ -111,9 +118,7 @@ class Api
         $this->instanceUrl = $baseUrl . '/services/data/v' . $version . '/';
         $this->batchUrl = $baseUrl . '/services/async/' . $version . '/job';
 
-        $this->headers = [
-            'Content-Type' => 'application/json',
-        ];
+        $this->configureDefaults($config);
     }
 
     /**
@@ -784,6 +789,27 @@ class Api
     }
 
     /**
+     * @param array $config
+     */
+    private function configureDefaults(array $config)
+    {
+        // set default options
+        $this->options = [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLINFO_HEADER_OUT => true,
+            ] + (!empty($config['options']) ? $config['options'] : []) + [
+                CURLOPT_CONNECTTIMEOUT => 2,
+                CURLOPT_TIMEOUT => 60,
+                CURLOPT_BUFFERSIZE => 128000,
+            ];
+
+        // set default headers
+        $this->headers = [
+                'Content-Type' => 'application/json',
+            ] + (!empty($config['headers']) ? $config['headers'] : []);
+    }
+
+    /**
      * Makes a request to the API using the access key.
      *
      * @param string $url
@@ -838,24 +864,17 @@ class Api
     /**
      * Performs the actual HTTP request to the Salesforce API.
      *
-     * @param string     $url
-     * @param array|null $params
-     * @param array|null $headers
-     * @param string     $method
-     * @return mixed
+     * @param $url
+     * @param null $params
+     * @param null $headers
+     * @param string $method
+     * @return false|mixed
      * @throws RequestException
      */
     private function httpRequest($url, $params = null, $headers = null, $method = self::METHOD_GET)
     {
         $this->handle = curl_init();
-        $options = [
-            CURLOPT_CONNECTTIMEOUT => 2,
-            CURLOPT_TIMEOUT        => 60,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_BUFFERSIZE     => 128000,
-            CURLINFO_HEADER_OUT    => true,
-        ];
-        curl_setopt_array($this->handle, $options);
+        curl_setopt_array($this->handle, $this->options);
 
         // Set the headers
         if (isset($headers) && $headers !== null && !empty($headers)) {
