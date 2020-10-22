@@ -864,9 +864,9 @@ class Api
     /**
      * Performs the actual HTTP request to the Salesforce API.
      *
-     * @param $url
-     * @param null $params
-     * @param null $headers
+     * @param string $url
+     * @param array|null $params
+     * @param array|null $headers
      * @param string $method
      * @return false|mixed
      * @throws RequestException
