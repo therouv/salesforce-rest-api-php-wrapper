@@ -7,7 +7,7 @@ This is a PHP Wrapper for the Salesforce Rest API.
 
 Grant Type
 ----------
-This library currently only supports the [Username-Password authentication flow](http://www.salesforce.com/us/developer/docs/api_rest/) or password grant type. 
+This library currently only supports the [Username-Password authentication flow](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_understanding_username_password_oauth_flow.htm) or password grant type. 
 
 Consumer Key / Secret
 ---------------------
