@@ -13,10 +13,17 @@ $username = '<Salesforce_User_Login>';
 $password = '<Salesforce_User_Password>';
 $securityToken = '<Salesforce_User_Security_Token>';
 
+// Ability to overwrite default options and headers
+$config = [
+	'options' => [
+		CURLOPT_CONNECTTIMEOUT => 5,
+	],
+];
+
 /*
  * Login to Salesforce
  */
-$salesforceApi = new Api($baseUrl, $version, $consumerKey, $consumerSecret);
+$salesforceApi = new Api($baseUrl, $version, $consumerKey, $consumerSecret, Api::RETURN_ARRAY_A, $config);
 $salesforceApi->login($username, $password, $securityToken);
 
 /*
