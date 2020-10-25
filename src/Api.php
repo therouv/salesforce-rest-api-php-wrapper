@@ -133,11 +133,11 @@ class Api
     public function login($username, $password, $securityToken)
     {
         $loginData = [
-            'grant_type'    => self::GRANT_TYPE,
-            'client_id'     => $this->clientId,
+            'grant_type' => self::GRANT_TYPE,
+            'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
-            'username'      => $username,
-            'password'      => $password . $securityToken,
+            'username' => $username,
+            'password' => $password . $securityToken,
         ];
 
         $ch = curl_init();
@@ -212,8 +212,8 @@ class Api
     /**
      * Get metadata about an Object.
      *
-     * @param string   $objectName
-     * @param bool     $all   Should this return all meta data including information about each field, URLs, and child relationships
+     * @param string $objectName
+     * @param bool $all Should this return all meta data including information about each field, URLs, and child relationships
      * @param DateTime $since Only return metadata if it has been modified since the date provided
      * @return mixed
      * @throws RequestException
@@ -242,7 +242,7 @@ class Api
      * Create a new record.
      *
      * @param string $objectName
-     * @param array  $data
+     * @param array $data
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -256,7 +256,7 @@ class Api
      * Update or Insert a record based on an external field and value.
      *
      * @param string $objectName object_name/field_name/field_value to identify the record
-     * @param array  $data
+     * @param array $data
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -271,7 +271,7 @@ class Api
      *
      * @param string $objectName
      * @param string $objectId
-     * @param array  $data
+     * @param array $data
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -298,8 +298,8 @@ class Api
     /**
      * Get a record.
      *
-     * @param string     $objectName
-     * @param string     $objectId
+     * @param string $objectName
+     * @param string $objectId
      * @param array|null $fields
      * @return mixed
      * @throws AuthorizationException
@@ -320,9 +320,9 @@ class Api
     /**
      * Searches using a SOQL Query.
      *
-     * @param string $query   The query to perform
-     * @param bool   $all     Search through deleted and merged data as well
-     * @param bool   $explain If the explain flag is set, it will return feedback on the query performance
+     * @param string $query The query to perform
+     * @param bool $all Search through deleted and merged data as well
+     * @param bool $explain If the explain flag is set, it will return feedback on the query performance
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -348,11 +348,59 @@ class Api
     }
 
     /**
+     * Since API version v36.0, see: https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/resources_search_parameterized.htm
+     *
+     * @param $query
+     * @param array $optionalParameters
+     * @param string $method
+     * @return mixed
+     * @throws AuthorizationException
+     * @throws RequestException
+     */
+    public function parameterizedSearch($query, $optionalParameters = [], $method = self::METHOD_GET)
+    {
+        // check if supported
+        if (intval($this->apiVersion) < 36) {
+            throw new RequestException('Parameterized search is supported from API version v36.0, you are on v' . $this->apiVersion . '. Check out the regular search for parameterized searching.');
+        }
+
+        // check if supported method
+        if (self::METHOD_GET !== $method && self::METHOD_POST !== $method) {
+            throw new RequestException('Unsupported method, only GET & POST methods are allowed.');
+        }
+
+        if (isset($optionalParameters['dataCategories']) && self::METHOD_POST !== $method) {
+            throw new RequestException('Multiple categories are only available when using a POST method.');
+        }
+
+        if (isset($optionalParameters['dataCategory']) && self::METHOD_GET !== $method) {
+            throw new RequestException('Single category filter is only available when using a GET method.');
+        }
+
+        // check array parameters
+        foreach (['fields', 'networkIds', 'sobjects'] as $parameter) {
+            if (isset($optionalParameters[$parameter]) && is_array($optionalParameters[$parameter]) && self::METHOD_POST != $method) {
+                throw new RequestException($parameter . ' as array is only supported with POST method.');
+            }
+        }
+
+        // if fields is comma separated string check if objects is set
+        if (isset($optionalParameters['fields']) && is_string($optionalParameters['fields']) && (!isset($optionalParameters['sobjects']) || !$optionalParameters['sobjects'])) {
+            throw new RequestException('Missing parameter "sobjects" when defining fields.');
+        }
+
+        // combine
+        $searchData = array_merge(['q' => $query], $optionalParameters);
+
+        return $this->requestInstance('parameterizedSearch/', $searchData, $method);
+    }
+
+    /**
      * @param $objectName
      * @param $fieldName
      * @param $externalId
      * @param array $data
-     * @return mixed
+     * @return false|mixed
      * @throws AuthorizationException
      * @throws RequestException
      */
@@ -497,9 +545,9 @@ class Api
     /**
      * Creates a new batch job instance
      *
-     * @param string      $operation
-     * @param string      $object
-     * @param string      $contentType
+     * @param string $operation
+     * @param string $object
+     * @param string $contentType
      * @param string|bool $externalIdFieldName
      * @return Job
      * @throws AuthorizationException
@@ -508,8 +556,8 @@ class Api
     public function createJob($operation, $object, $contentType, $externalIdFieldName = false)
     {
         $payload = [
-            'operation'   => $operation,
-            'object'      => $object,
+            'operation' => $operation,
+            'object' => $object,
             'contentType' => $contentType,
         ];
 
@@ -730,9 +778,9 @@ class Api
      * Makes a request to the API using the base url and the given path using the access key.
      *
      * @param string $path
-     * @param array  $params
+     * @param array $params
      * @param string $method
-     * @param array  $headers
+     * @param array $headers
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -746,9 +794,9 @@ class Api
      * Makes a request to the API using the instance url and the given path using the access key.
      *
      * @param string $path
-     * @param array  $params
+     * @param array $params
      * @param string $method
-     * @param array  $headers
+     * @param array $headers
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -813,9 +861,9 @@ class Api
      * Makes a request to the API using the access key.
      *
      * @param string $url
-     * @param array  $params
+     * @param array $params
      * @param string $method
-     * @param array  $headers
+     * @param array $headers
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -841,8 +889,8 @@ class Api
      * Makes an HTTP batch request
      *
      * @param string $path
-     * @param array  $payload (default: [])
-     * @param string $method  (default: 'POST')
+     * @param array $payload (default: [])
+     * @param string $method (default: 'POST')
      * @return mixed
      * @throws AuthorizationException
      * @throws RequestException
@@ -949,8 +997,8 @@ class Api
      *
      * @see http://www.salesforce.com/us/developer/docs/api_rest/index_Left.htm#CSHID=errorcodes.htm|StartTopic=Content%2Ferrorcodes.htm|SkinName=webhelp
      *
-     * @param string   $response The response from the server
-     * @param Resource $handle   The CURL handle
+     * @param string $response The response from the server
+     * @param Resource $handle The CURL handle
      * @return string The response from the API
      * @throws RequestException
      */
